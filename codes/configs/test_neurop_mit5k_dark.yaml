@@ -1,13 +1,13 @@
 #### general settings
 name: neurop_test_dark
-is_pretrain: false
+is_init: false
 is_train: false
 device: cpu ### "cpu|cuda"
-weights: ../experiments/pretrained_models/neurop_fivek_dark.pth
+weights: ../pretrained_models/neurop_fivek_dark.pth
 
 #### datasets
 datasets:
-  name: mit_dark
+  name: fivek_dark
   mode: finetune
   dataroot: dataset-dark
   n_cpus: 1

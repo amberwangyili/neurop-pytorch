@@ -1,6 +1,7 @@
 #  dir
 datasets
 results
+experiments
 
 *.png
 *.tif

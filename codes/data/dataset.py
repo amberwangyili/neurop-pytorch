@@ -7,9 +7,9 @@ from torch.utils.data import Dataset
 import numpy as np
 
 
-class PretrainDataset(Dataset):
+class InitDataset(Dataset):
     def __init__(self,dataset_opt):
-        super(PretrainDataset,self).__init__()
+        super(InitDataset,self).__init__()
         opt = dataset_opt
         filepath_EX = get_file_paths(os.path.join(opt['dataroot'],'EX'),'png')
         filepath_BC = get_file_paths(os.path.join(opt['dataroot'],'BC'),'png')
@@ -61,27 +61,46 @@ class PretrainDataset(Dataset):
                 'A_bc': img_A_bc, 'B_bc': img_B_bc, 'val_bc':val_bc, 
                 'A_vb': img_A_vb, 'B_vb': img_B_vb, 'val_vb':val_vb 
                } 
+
 class FinetuneDataset(Dataset):
     def __init__(self,opt,phase):
         super(FinetuneDataset, self).__init__()
         self.opt = opt
         self.phase = phase
-        self.dataroot = opt['dataroot']
-        if self.opt['name'] == "mit_dark":
+        
+        if self.opt['name'] == "fivek_dark":
             self.suffix_A = "tif"
             self.suffix_B = "jpg"
-        elif self.opt['name'] == "mit_lite":
+            self.dataroot_A = opt['dataroot']
+            self.dataroot_B = opt['dataroot']
+
+        elif self.opt['name'] == "fivek_lite":
             self.suffix_A = "jpg"
             self.suffix_B = "jpg"
+            self.dataroot_A = opt['dataroot']
+            self.dataroot_B = opt['dataroot']
+
+        elif "ppr" in self.opt['name']:
+            self.suffix_A = "tif"
+            self.suffix_B = "tif"
+            self.suffix_M = "png"
+            self.dataroot_A = opt['dataroot']
+            self.dataroot_B = os.path.join(opt['dataroot'],opt['name'])
+
         else:
             raise NotImplementedError('Datasetname [{:s}] is not recognized.'.format(self.opt['name']))
 
         if self.phase == "train":
-            self.path_A = get_file_paths(os.path.join(self.dataroot,"trainA"),self.suffix_A)
-            self.path_B = get_file_paths(os.path.join(self.dataroot,"trainB"),self.suffix_B)
+            self.path_A = get_file_paths(os.path.join(self.dataroot_A,"trainA"),self.suffix_A)
+            self.path_B = get_file_paths(os.path.join(self.dataroot_B,"trainB"),self.suffix_B)
+            if "ppr" in self.opt['name']:
+                self.path_M = get_file_paths(os.path.join(self.dataroot_A,"trainM"),self.suffix_M)
+
         else:
-            self.path_A = get_file_paths(os.path.join(self.dataroot,"testA"),self.suffix_A)
-            self.path_B = get_file_paths(os.path.join(self.dataroot,"testB"),self.suffix_B)
+            self.path_A = get_file_paths(os.path.join(self.dataroot_A,"testA"),self.suffix_A)
+            self.path_B = get_file_paths(os.path.join(self.dataroot_B,"testB"),self.suffix_B)
+            if "ppr" in self.opt['name']:
+                self.path_M = get_file_paths(os.path.join(self.dataroot_A,"testM"),self.suffix_M)
 
         assert(len(self.path_A) > 0)
         assert(len(self.path_A) == len(self.path_B))
@@ -98,13 +117,23 @@ class FinetuneDataset(Dataset):
         img_B = np.array(imageio.imread(path_B))/(2**8-1)
             
         if self.phase == "train":
-            img_A, img_B = aug_process(img_A,img_B)
-            
-        img_A = torch.from_numpy(np.ascontiguousarray(np.transpose(img_A, (2, 0, 1)))).float()
-        img_B = torch.from_numpy(np.ascontiguousarray(np.transpose(img_B, (2, 0, 1)))).float()       
-
-        return {'idx': idx, 'LQ_path':path_A,'GT_path':path_B, 'LQ': img_A, 'GT': img_B}
+            if "ppr" in self.opt['name']:
+                path_M = self.path_M[index]
+                img_M = np.array(imageio.imread(path_M))
+                img_A, img_B, img_M = aug_process(img_A,img_B,img_M)
+                img_A = torch.from_numpy(np.ascontiguousarray(np.transpose(img_A, (2, 0, 1)))).float()
+                img_B = torch.from_numpy(np.ascontiguousarray(np.transpose(img_B, (2, 0, 1)))).float()       
+                img_M = torch.from_numpy(np.ascontiguousarray(img_M)).long()   
+                return {'idx': idx, 'LQ_path':path_A,'GT_path':path_B, 'LQ': img_A, 'GT': img_B, 'M': img_M}
+            else:
+                img_A, img_B = aug_process(img_A,img_B)
+                img_A = torch.from_numpy(np.ascontiguousarray(np.transpose(img_A, (2, 0, 1)))).float()
+                img_B = torch.from_numpy(np.ascontiguousarray(np.transpose(img_B, (2, 0, 1)))).float()       
+                return {'idx': idx, 'LQ_path':path_A,'GT_path':path_B, 'LQ': img_A, 'GT': img_B}
+        else:
+            img_A = torch.from_numpy(np.ascontiguousarray(np.transpose(img_A, (2, 0, 1)))).float()
+            img_B = torch.from_numpy(np.ascontiguousarray(np.transpose(img_B, (2, 0, 1)))).float()       
+            return {'idx': idx, 'LQ_path':path_A,'GT_path':path_B, 'LQ': img_A, 'GT': img_B}
 
     def __len__(self):
         return len(self.path_A)
-    

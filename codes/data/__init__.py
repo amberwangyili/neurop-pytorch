@@ -13,8 +13,8 @@ def build_train_loader(dataset_opt):
 
     assert(batch_size == 1)
 
-    if mode == 'pretrain':
-        dataset = PretrainDataset(dataset_opt) 
+    if mode == 'init':
+        dataset = InitDataset(dataset_opt) 
     elif mode == "finetune":
         dataset = FinetuneDataset(dataset_opt,phase="train")
     else:
@@ -35,8 +35,8 @@ def build_val_loader(dataset_opt):
 
     assert(batch_size == 1)
 
-    if mode == 'pretrain':
-        dataset = PretrainDataset(dataset_opt) 
+    if mode == 'init':
+        dataset = InitDataset(dataset_opt) 
     elif mode == "finetune":
         dataset = FinetuneDataset(dataset_opt,phase="val")
     else:
@@ -48,3 +48,4 @@ def build_val_loader(dataset_opt):
     return torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False,
                                        num_workers=1, sampler=None, drop_last=False,
                                        pin_memory=False)
+

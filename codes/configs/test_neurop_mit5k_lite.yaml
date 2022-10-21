@@ -1,13 +1,13 @@
 #### general settings
 name: neurop_test_lite
-is_pretrain: false
+is_init: false
 is_train: false
 device: cpu ### "cpu|cuda"
-weights: ../experiments/pretrained_models/neurop_fivek_lite.pth
+weights: ../pretrained_models/neurop_fivek_lite.pth
 
 #### datasets
 datasets:
-  name: mit_lite
+  name: fivek_lite
   mode: finetune
   dataroot: dataset-lite
   n_cpus: 1

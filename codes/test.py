@@ -1,5 +1,5 @@
 from utils import *
-from data import build_train_loader,build_val_loader
+from data import build_train_loader, build_val_loader
 import argparse
 import logging
 import os
@@ -15,7 +15,9 @@ import imageio
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-config', type=str, default='./configs/test_neurop_mit5k_dark.yaml')
+    parser.add_argument('-config', type=str, help='path of the yaml configuration file')
+    parser.add_argument('--save', action='store_true', help='if specified, save figures in result folder')
+
     args = parser.parse_args()
     opt = parse(args.config)
     opt = dict_to_nonedict(opt)
@@ -43,35 +45,37 @@ if __name__ == '__main__':
     val_loader = build_val_loader(dataset_opt)
     model = build_model(opt)
 
+    #### inference
+    psnr_list = []
+    ssim_list = []
+    deltaE_list = []
 
-
-    #### validation
     pbar = ProgressBar(len(val_loader))
-    avg_psnr = 0.
-    avg_ssim = 0.
-    idx = 0
     for val_data in val_loader:
-        
         img_name = get_file_name(val_data['LQ_path'][0])
-        img_dir = opt['path']['results_root']
-        if not os.path.exists(img_dir):
-            os.makedirs(img_dir)
-        idx += 1
+        if args.save:
+            img_dir = os.path.join(opt['path']['results_root'],'images')
+            if not os.path.exists(img_dir):
+                os.makedirs(img_dir)
         model.feed_data(val_data)
         model.test()
         visuals = model.get_current_visuals()
 
         sr_img = visuals['rlt']
-        gt_img = visuals['GT']  
-
-        # save_img_path = os.path.join(img_dir,'{:s}.png'.format(img_name))
-        # imageio.imwrite(save_img_path, (255.0 * sr_img).astype('uint8'))
-
+        gt_img = visuals['GT']
+        
         psnr = calculate_psnr(sr_img, gt_img)
-        ssim = calculate_ssim((255.0 * sr_img).astype('uint8'), (255.0 * gt_img).astype('uint8'))
-        avg_psnr += psnr
-        avg_ssim += ssim
-        pbar.update('Test {}'.format(img_name))
-        logger.info('# Test {}, PSNR: {:.4e}, SSIM: {:.4e}'.format(img_name,psnr,ssim))
+        ssim = calculate_ssim(sr_img, gt_img)
+        dE = calculate_dE(sr_img, gt_img)
+        
+    
+        psnr_list.append(psnr)
+        ssim_list.append(ssim)
+        deltaE_list.append(dE)
+        pbar.update('img: {}  PSNR: {}  SSIM: {}  deltaE: {}'.format(img_name, psnr, ssim, dE))
+        if args.save:
+            save_img_path = os.path.join(img_dir,'{:s}.png'.format(img_name))
+            imageio.imwrite(save_img_path, (255.0 * sr_img).astype('uint8'))
 
-    logger.info('# Validation # Average PSNR: {:.4e}, Average SSIM: {:.4e}'.format(avg_psnr/idx,avg_ssim/idx))
+    logger.info('Average PSNR: {}  SSIM: {}  deltaE: {}  Total image: {}'.format(np.mean(psnr_list), np.mean(ssim_list), np.mean(deltaE_list), len(psnr_list)))
+    

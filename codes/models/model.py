@@ -10,25 +10,16 @@ import torch.nn as nn
 
 
 
-from torch.nn.parallel import DataParallel
-import os
-import logging
-from collections import OrderedDict
-import torch
-import torch.nn as nn
-
-
-
-class PretrainModel():
+class InitModel():
     def __init__(self, opt):
         self.opt = opt
         self.device = torch.device(opt['device'])
-        self.name = "pretrain_renderer"
+        self.name = "neurop_initialization"
         net_opt = opt['network_G']
         self.netG = Renderer(net_opt['in_nc'],net_opt['out_nc'],net_opt['base_nf']).to(self.device)
         self.netG = DataParallel(self.netG)
         self.print_network()
-        self.load()	
+        self.load() 
         self.netG.train()
 
         train_opt = opt['train']
@@ -178,7 +169,7 @@ class FinetuneModel():
         self.device = torch.device(opt['device'])
         self.name = "neurop_"+opt['datasets']['name']
         net_opt = opt['network_G']
-        self.netG = NeurOP(net_opt['in_nc'],net_opt['out_nc'],net_opt['base_nf'],net_opt['cond_nf'],net_opt['pretrain_model'])
+        self.netG = NeurOP(net_opt['in_nc'],net_opt['out_nc'],net_opt['base_nf'],net_opt['cond_nf'],net_opt['init_model'])
         if opt['weights'] is not None:
             self.netG.load_state_dict(torch.load(opt['weights']))
         self.netG.to(self.device)        
