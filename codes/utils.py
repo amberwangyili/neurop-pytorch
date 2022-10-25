@@ -21,8 +21,9 @@ from skimage.color import rgb2lab, deltaE_cie76
 def calculate_dE(img1, img2):
     return np.array(deltaE_cie76(rgb2lab(img1),rgb2lab(img2))).mean()
 
+
 def calculate_ssim(img1, img2):
-    return structural_similarity(img1,img2,data_range=1.0, channel_axis=-1)
+    return structural_similarity(img1,img2,data_range=1.0, channel_axis=-1,multichannel=True)
     
 
 def calculate_psnr(img1, img2):
@@ -31,10 +32,7 @@ def calculate_psnr(img1, img2):
         return float('inf')
     return -20 * math.log10(math.sqrt(mse))
 
-
-
-
-def aug_process(img_GT, img_LQ):
+def aug_process(img_GT, img_LQ, img_M=None):
     h, w = img_GT.shape[:2]
     crop_size = 20
     new_h = random.randint(h - crop_size, h - 1)
@@ -44,18 +42,30 @@ def aug_process(img_GT, img_LQ):
     x = random.randint(0, w - new_w - 1)
     img_GT = img_GT[y:y+new_h, x:x+new_w,:]
     img_LQ = img_LQ[y:y+new_h, x:x+new_w,:]
+    if img_M is not None:
+        img_M = img_M[y:y+new_h, x:x+new_w]
+
     is_flip = random.randint(0,3)
     if is_flip == 0:
         img_GT = np.flip(img_GT, axis=0)
         img_LQ = np.flip(img_LQ, axis=0)
+        if img_M is not None:
+            img_M = np.flip(img_M,axis=0)
     elif is_flip == 2:
         img_GT = np.flip(img_GT, axis=1)
         img_LQ = np.flip(img_LQ, axis=1)
+        if img_M is not None:
+            img_M = np.flip(img_M, axis=1)
     is_rot = random.randint(0,3)
     if is_rot !=0:
+        if img_M is not None:
+            img_M = np.rot90(img_M, is_rot)
         img_GT = np.rot90(img_GT, is_rot)
         img_LQ = np.rot90(img_LQ, is_rot)
-    return img_GT, img_LQ
+    if img_M is not None:
+        return img_GT, img_LQ, img_M
+    else:
+        return img_GT, img_LQ
 
 
 def get_file_paths(folder,suffix):

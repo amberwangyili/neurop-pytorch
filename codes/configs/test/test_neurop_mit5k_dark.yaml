@@ -1,21 +1,21 @@
 #### general settings
-name: neurop_test_lite
+name: neurop_test_dark
 is_init: false
 is_train: false
-device: cpu ### "cpu|cuda"
-weights: ../pretrained_models/neurop_fivek_lite.pth
+device: cuda
+weights: ../pretrained_models/neurop_fivek_dark.pth
 
 #### datasets
 datasets:
-  name: fivek_lite
+  name: fivek_dark
   mode: finetune
-  dataroot: dataset-lite
+  dataroot: dataset-dark
   n_cpus: 1
   batch_size: 1
 
 #### network structures
 network_G:
-  pretrain_model: ~ 
+  init_model: ~ 
   in_nc: 3
   out_nc: 3
   base_nf: 64

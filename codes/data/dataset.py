@@ -1,4 +1,3 @@
-
 from utils import *
 from collections import defaultdict
 import imageio

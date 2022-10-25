@@ -1,15 +1,14 @@
 #### general settings
-name: neurop_train_dark
+name: neurop_train_ppr_a
 is_init: false
 is_train: true
-device: cpu 
-
+device: cuda 
 
 #### datasets
 datasets:
-  name: fivek_dark
+  name: ppr-a
   mode: finetune
-  dataroot: dataset-dark
+  dataroot: dataset-ppr
   n_cpus: 8
   batch_size: 1
 
@@ -28,6 +27,6 @@ train:
   lr_G: !!float 5e-5
   beta1: 0.9
   beta2: 0.99
-  niter: 600000
+  niter: 1000000
   manual_seed: 0
   pixel_weight: 10.0
